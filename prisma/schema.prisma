@@ -59,6 +59,7 @@ model Portfolio {
   profileImage String? // URL to profile image
   jobTitle     String? // e.g., "Aspiring Software Engineer"
   socialLinks  Json?   // Object containing LinkedIn, GitHub, Twitter, etc.
+  template     String  @default("onyx") // Portfolio template theme
   isPublic     Boolean @default(false) // Whether portfolio is publicly visible
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
