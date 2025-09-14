@@ -181,7 +181,7 @@ function testDatabaseSchema() {
 
 // Main test runner
 export function runCompleteTest() {
-  console.log("🚀 Portfolio Builder - Complete Integration Test\n");
+  console.log("🚀 Port4lio - Complete Integration Test\n");
   console.log("=" .repeat(50));
   
   testDatabaseSchema();
@@ -197,7 +197,7 @@ export function runCompleteTest() {
   console.log("2. Copy and paste the testPortfolioAPI function");
   console.log("3. Run: testPortfolioAPI()");
   
-  console.log("\n🎉 Portfolio Builder integration is complete!");
+  console.log("\n🎉 Port4lio integration is complete!");
 }
 
 // Export for use in browser console

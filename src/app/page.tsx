@@ -8,7 +8,28 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-gray-900">Portfolio Builder</h1>
+              <h1 
+                className="text-2xl font-bold tracking-tight"
+                style={{ 
+                  fontFamily: "var(--font-plus-jakarta-sans)",
+                  color: "black"
+                }}
+              >
+                Port
+                <span
+                  style={{
+                    color: "#4f39f6",
+                    fontSize: "1.5rem",
+                    fontWeight: "900",
+                    fontFamily: "var(--font-orbitron)",
+                    display: "inline-block",
+                    transform: "rotate(-5deg)"
+                  }}
+                >
+                  4
+                </span>
+                lio
+              </h1>
             </div>
             <div className="flex space-x-4">
               <Link
@@ -112,7 +133,7 @@ export default function Home() {
       <footer className="bg-gray-50 mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center text-gray-600">
-            <p>&copy; 2025 Portfolio Builder. Made for students, by students.</p>
+            <p>&copy; 2025 Port4lio. Made for students, by students.</p>
           </div>
         </div>
       </footer>

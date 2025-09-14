@@ -69,14 +69,20 @@ export default function TemplatesPage() {
 
       if (response.ok) {
         setCurrentTemplate(templateId)
-        setSaveMessage("Template updated successfully!")
-        setTimeout(() => setSaveMessage(""), 3000)
+        setSaveMessage("Template selected! Redirecting to visual editor...")
+        
+        // Redirect to visual editor with selected template
+        setTimeout(() => {
+          router.push(`/dashboard/editor?template=${templateId}`)
+        }, 1000)
       } else {
         throw new Error("Failed to update template")
       }
     } catch (error) {
       console.error("Error updating template:", error)
       setSelectedTemplate(currentTemplate) // Revert selection on error
+      setSaveMessage("Error selecting template")
+      setTimeout(() => setSaveMessage(""), 3000)
     } finally {
       setSaving(false)
     }

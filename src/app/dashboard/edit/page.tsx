@@ -579,6 +579,16 @@ export default function EditPortfolioPage() {
                   {isSaving ? "Saving Changes..." : "Save Changes"}
                 </button>
 
+                <Link
+                  href="/dashboard/templates"
+                  className="flex-1 sm:flex-none bg-purple-600 text-white px-8 py-3 rounded-md hover:bg-purple-700 font-medium inline-flex items-center justify-center gap-2 transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a4 4 0 004-4V5z" />
+                  </svg>
+                  Design in Visual Editor
+                </Link>
+
                 {portfolioSlug && portfolioData.isPublic && (
                   <button
                     onClick={handleViewPortfolio}

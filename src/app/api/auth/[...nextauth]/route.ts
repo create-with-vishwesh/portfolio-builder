@@ -81,6 +81,19 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string
+        
+        // Fetch user's portfolio slug to use as username
+        try {
+          const user = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            include: { portfolio: true }
+          })
+          if (user?.portfolio) {
+            session.user.username = user.portfolio.slug
+          }
+        } catch (error) {
+          console.error("Error fetching username:", error)
+        }
       }
       return session
     },

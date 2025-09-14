@@ -102,8 +102,7 @@ export default function DashboardPage() {
       icon: ChartBarIcon,
       href: "/dashboard/analytics",
       color: "bg-green-500 hover:bg-green-600",
-      stats: "Coming soon",
-      disabled: true
+      stats: "Track views & performance"
     },
     {
       title: "Account Settings",
@@ -111,8 +110,7 @@ export default function DashboardPage() {
       icon: CogIcon,
       href: "/dashboard/settings",
       color: "bg-gray-500 hover:bg-gray-600",
-      stats: "Profile settings",
-      disabled: true
+      stats: "Profile settings"
     }
   ]
 
@@ -214,33 +212,6 @@ export default function DashboardPage() {
           {dashboardCards.map((card, index) => {
             const IconComponent = card.icon
             
-            if (card.disabled) {
-              return (
-                <div
-                  key={index}
-                  className="bg-white rounded-lg shadow hover:shadow-md transition-shadow duration-200 border border-gray-200 opacity-75 cursor-not-allowed"
-                >
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className={`p-3 rounded-lg bg-gray-100`}>
-                        <IconComponent className="h-6 w-6 text-gray-400" />
-                      </div>
-                      <span className="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-full">
-                        Coming Soon
-                      </span>
-                    </div>
-                    
-                    <h3 className="text-lg font-semibold text-gray-500 mb-2">{card.title}</h3>
-                    <p className="text-gray-400 text-sm mb-4">{card.description}</p>
-                    
-                    <div className="text-xs text-gray-400">
-                      {card.stats}
-                    </div>
-                  </div>
-                </div>
-              )
-            }
-
             return (
               <Link
                 key={index}
