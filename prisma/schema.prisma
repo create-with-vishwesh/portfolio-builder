@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// User model for authentication and portfolio ownership
+model User {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?   // For credential-based login
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  accounts  Account[]
+  portfolio Portfolio?
+
+  @@map("users")
+}
+
+// Account model for OAuth providers (Next-Auth standard)
+model Account {
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String  @db.ObjectId
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.String
+  access_token      String? @db.String
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.String
+  session_state     String?
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+// Portfolio model - core entity for student portfolios
+model Portfolio {
+  id           String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String  @unique @db.ObjectId
+  slug         String  @unique // For public portfolio URLs (e.g., /portfolio/john-doe)
+  aboutMe      String?
+  profileImage String? // URL to profile image
+  jobTitle     String? // e.g., "Aspiring Software Engineer"
+  socialLinks  Json?   // Object containing LinkedIn, GitHub, Twitter, etc.
+  isPublic     Boolean @default(false) // Whether portfolio is publicly visible
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projects Project[]
+  skills   Skill[]
+
+  @@map("portfolios")
+}
+
+// Project model for showcasing student projects
+model Project {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  portfolioId String  @db.ObjectId
+  title       String
+  description String?
+  projectUrl  String? // Live demo URL
+  githubUrl   String? // GitHub repository URL
+  imageUrl    String? // Project screenshot/thumbnail
+  technologies String[] // Array of technologies used
+  order       Int     @default(0) // For custom ordering
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  portfolio Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+
+  @@map("projects")
+}
+
+// Skill model for listing student skills
+model Skill {
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  portfolioId String @db.ObjectId
+  name        String // e.g., "JavaScript", "React", "Node.js"
+  category    String? // e.g., "Programming Languages", "Frameworks", "Tools"
+  level       String? // e.g., "Beginner", "Intermediate", "Advanced"
+  order       Int    @default(0) // For custom ordering
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  portfolio Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+
+  @@map("skills")
+}
