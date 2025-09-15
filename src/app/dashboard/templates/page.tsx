@@ -147,6 +147,16 @@ export default function TemplatesPage() {
 
     // Full-Stack Development Templates
     {
+      id: "pro",
+      name: "Pro",
+      description: "A clean, professional template perfect for software engineers and developers",
+      preview: "Clean • Professional • Engineering",
+      color: "from-white to-gray-50",
+      features: ["Clean design", "Professional layout", "Engineering focus"],
+      category: "fullstack",
+      targetAudience: "Software Engineers, Full-Stack Developers, Tech Professionals"
+    },
+    {
       id: "modern",
       name: "Modern",
       description: "A contemporary design with animated elements for full-stack developers",
@@ -360,7 +370,7 @@ export default function TemplatesPage() {
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Full-Stack Development</h2>
             <p className="text-gray-600 mb-6">Versatile templates for full-stack developers and tech leaders</p>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {templates.filter(template => template.category === 'fullstack').map((template) => {
                 const isSelected = selectedTemplate === template.id
                 const isCurrent = currentTemplate === template.id

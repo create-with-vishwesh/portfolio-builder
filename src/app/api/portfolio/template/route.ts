@@ -14,7 +14,7 @@ const VALID_TEMPLATES = [
   "terminal", 
   "modern", 
   "data", 
-  "flux"
+  "pro"
 ]
 
 // POST - Update user's portfolio template

@@ -7,6 +7,7 @@ import CreativeTemplate from "@/components/templates/CreativeTemplate"
 import TerminalTemplate from "@/components/templates/TerminalTemplate"
 import ModernTemplate from "@/components/templates/ModernTemplate"
 import DataTemplate from "@/components/templates/DataTemplate"
+import ProTemplate from "@/components/templates/ProTemplate"
 import CustomLayoutPortfolio from "../../components/CustomLayoutPortfolio"
 
 const prisma = new PrismaClient()
@@ -115,6 +116,8 @@ export default async function PortfolioPage({
 
   // Render the appropriate template based on user's choice
   switch (template) {
+    case "pro":
+      return <ProTemplate {...templateProps} />
     case "creative":
       return <CreativeTemplate {...templateProps} />
     case "terminal":
