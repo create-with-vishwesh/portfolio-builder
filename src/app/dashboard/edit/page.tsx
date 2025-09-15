@@ -3,7 +3,7 @@
 import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { PlusIcon, TrashIcon, EyeIcon, ArrowLeftIcon } from "@heroicons/react/24/outline"
+import { PlusIcon, TrashIcon, EyeIcon, ArrowLeftIcon, SunIcon, MoonIcon } from "@heroicons/react/24/outline"
 import Link from "next/link"
 
 interface SocialLinks {
@@ -42,95 +42,94 @@ export default function EditPortfolioPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   
+  const [isDarkMode, setIsDarkMode] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState("")
   const [error, setError] = useState("")
   const [portfolioSlug, setPortfolioSlug] = useState<string | null>(null)
-  
+
   const [portfolioData, setPortfolioData] = useState<PortfolioData>({
     aboutMe: "",
     jobTitle: "",
     profileImage: "",
-    socialLinks: {},
+    socialLinks: {
+      linkedin: "",
+      github: "",
+      twitter: "",
+      website: ""
+    },
     projects: [],
     skills: [],
     isPublic: false
   })
 
-  const [newSkill, setNewSkill] = useState({ name: "", category: "Programming Languages", level: "Intermediate" })
-
+  // Load portfolio data
   useEffect(() => {
-    if (status === "unauthenticated") {
+    if (status === "authenticated") {
+      loadPortfolioData()
+    } else if (status === "unauthenticated") {
       router.push("/auth/signin")
     }
   }, [status, router])
 
-  // Fetch existing portfolio data
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetchPortfolio()
-    }
-  }, [session])
-
-  const fetchPortfolio = async () => {
+  const loadPortfolioData = async () => {
     try {
-      setIsLoading(true)
       const response = await fetch("/api/portfolio")
-      const data = await response.json()
-      
-      if (response.ok && data.portfolio) {
-        const portfolio = data.portfolio
-        setPortfolioSlug(portfolio.slug) // Store the portfolio slug
-        setPortfolioData({
-          aboutMe: portfolio.aboutMe || "",
-          jobTitle: portfolio.jobTitle || "",
-          profileImage: portfolio.profileImage || "",
-          socialLinks: portfolio.socialLinks || {},
-          projects: portfolio.projects || [],
-          skills: portfolio.skills || [],
-          isPublic: portfolio.isPublic || false
-        })
+      if (response.ok) {
+        const data = await response.json()
+        setPortfolioData(data)
+        if (data.username) {
+          setPortfolioSlug(data.username)
+        }
       }
     } catch (error) {
-      console.error("Error fetching portfolio:", error)
+      console.error("Error loading portfolio:", error)
+      setError("Failed to load portfolio data")
     } finally {
       setIsLoading(false)
     }
   }
 
-  const updateProfileData = (field: string, value: any) => {
-    setPortfolioData(prev => ({ ...prev, [field]: value }))
-  }
+  const handleSave = async () => {
+    setIsSaving(true)
+    setSaveMessage("")
+    setError("")
 
-  const updateSocialLink = (platform: string, url: string) => {
-    setPortfolioData(prev => ({
-      ...prev,
-      socialLinks: { ...prev.socialLinks, [platform]: url }
-    }))
+    try {
+      const response = await fetch("/api/portfolio", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(portfolioData),
+      })
+
+      if (response.ok) {
+        setSaveMessage("Portfolio saved successfully!")
+        setTimeout(() => setSaveMessage(""), 3000)
+      } else {
+        throw new Error("Failed to save portfolio")
+      }
+    } catch (error) {
+      console.error("Error saving portfolio:", error)
+      setError("Failed to save portfolio")
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const addProject = () => {
-    const newProject: Project = {
-      title: "",
-      description: "",
-      projectUrl: "",
-      githubUrl: "",
-      imageUrl: "",
-      technologies: []
-    }
     setPortfolioData(prev => ({
       ...prev,
-      projects: [...prev.projects, newProject]
-    }))
-  }
-
-  const updateProject = (index: number, field: string, value: any) => {
-    setPortfolioData(prev => ({
-      ...prev,
-      projects: prev.projects.map((project, i) => 
-        i === index ? { ...project, [field]: value } : project
-      )
+      projects: [...prev.projects, {
+        title: "",
+        description: "",
+        projectUrl: "",
+        githubUrl: "",
+        imageUrl: "",
+        technologies: []
+      }]
     }))
   }
 
@@ -141,14 +140,20 @@ export default function EditPortfolioPage() {
     }))
   }
 
+  const updateProject = (index: number, field: keyof Project, value: string | string[]) => {
+    setPortfolioData(prev => ({
+      ...prev,
+      projects: prev.projects.map((project, i) => 
+        i === index ? { ...project, [field]: value } : project
+      )
+    }))
+  }
+
   const addSkill = () => {
-    if (newSkill.name.trim()) {
-      setPortfolioData(prev => ({
-        ...prev,
-        skills: [...prev.skills, { ...newSkill }]
-      }))
-      setNewSkill({ name: "", category: "Programming Languages", level: "Intermediate" })
-    }
+    setPortfolioData(prev => ({
+      ...prev,
+      skills: [...prev.skills, { name: "", category: "", level: "Beginner" }]
+    }))
   }
 
   const removeSkill = (index: number) => {
@@ -158,457 +163,600 @@ export default function EditPortfolioPage() {
     }))
   }
 
-  const handleSave = async () => {
-    try {
-      setIsSaving(true)
-      setError("")
-      setSaveMessage("")
-
-      const response = await fetch("/api/portfolio", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(portfolioData)
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        setSaveMessage("Portfolio saved successfully!")
-        // Store the slug from the response if it exists
-        if (data.portfolio && data.portfolio.slug) {
-          setPortfolioSlug(data.portfolio.slug)
-        }
-        setTimeout(() => setSaveMessage(""), 3000)
-      } else {
-        throw new Error(data.error || "Failed to save portfolio")
-      }
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Something went wrong")
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  const handleViewPortfolio = () => {
-    if (portfolioSlug) {
-      // Open portfolio in new tab
-      window.open(`/${portfolioSlug}`, '_blank')
-    }
+  const updateSkill = (index: number, field: keyof Skill, value: string) => {
+    setPortfolioData(prev => ({
+      ...prev,
+      skills: prev.skills.map((skill, i) => 
+        i === index ? { ...skill, [field]: value } : skill
+      )
+    }))
   }
 
   if (status === "loading" || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
       </div>
     )
   }
 
-  if (!session) {
-    return null
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/dashboard"
-                className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                <ArrowLeftIcon className="h-5 w-5 mr-2" />
-                Back to Dashboard
-              </Link>
-              <div className="border-l border-gray-300 pl-4">
-                <h1 className="text-2xl font-bold text-gray-900">Portfolio Editor</h1>
-                <p className="text-gray-600">Create and customize your portfolio</p>
-              </div>
+    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}>
+      {/* Navbar */}
+      <nav className={`sticky top-0 z-40 backdrop-blur-lg border-b ${
+        isDarkMode 
+          ? 'bg-gray-900/80 border-gray-800' 
+          : 'bg-white/80 border-gray-200'
+      }`}>
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Left side - Logo */}
+            <div className="flex items-center">
+              <h1 className={`text-2xl font-bold ${
+                isDarkMode ? 'text-white' : 'text-gray-900'
+              }`} style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                <span className="text-blue-600">Port</span>
+                <span className={isDarkMode ? 'text-blue-400' : 'text-blue-600'} style={{ fontFamily: 'Orbitron, sans-serif' }}>4</span>
+                <span className={isDarkMode ? 'text-white' : 'text-gray-900'}>lio</span>
+              </h1>
             </div>
-            <div className="flex space-x-4">
-              <button
-                onClick={() => signOut({ callbackUrl: "/" })}
-                className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
+
+            {/* Center - Navigation Links */}
+            <div className="hidden md:flex items-center space-x-8">
+              <Link 
+                href="/dashboard" 
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  isDarkMode 
+                    ? 'text-gray-300 hover:text-white hover:bg-gray-800' 
+                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
+                }`}
               >
-                Sign Out
+                Dashboard
+              </Link>
+              <Link 
+                href="/dashboard/templates" 
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  isDarkMode 
+                    ? 'text-gray-300 hover:text-white hover:bg-gray-800' 
+                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                Templates
+              </Link>
+              <Link 
+                href="/dashboard/analytics" 
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  isDarkMode 
+                    ? 'text-gray-300 hover:text-white hover:bg-gray-800' 
+                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                Analytics
+              </Link>
+              <Link 
+                href="/dashboard/settings" 
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  isDarkMode 
+                    ? 'text-gray-300 hover:text-white hover:bg-gray-800' 
+                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                Settings
+              </Link>
+              <Link 
+                href="/dashboard/edit" 
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700`}
+              >
+                Edit Portfolio
+              </Link>
+            </div>
+
+            {/* Right side - Theme toggle and User menu */}
+            <div className="flex items-center space-x-4">
+              {/* Theme toggle button */}
+              <button
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className={`p-2 rounded-lg transition-colors ${
+                  isDarkMode 
+                    ? 'bg-gray-800 text-yellow-400 hover:bg-gray-700' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+                aria-label="Toggle theme"
+              >
+                {isDarkMode ? (
+                  <SunIcon className="h-5 w-5" />
+                ) : (
+                  <MoonIcon className="h-5 w-5" />
+                )}
               </button>
+
+              {/* User menu */}
+              <div className="relative group">
+                <button 
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isDarkMode 
+                      ? 'text-gray-300 hover:text-white hover:bg-gray-800' 
+                      : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
+                >
+                  <span>{session?.user?.email || 'User'}</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {/* Dropdown menu */}
+                <div className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 ${
+                  isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
+                }`}>
+                  <div className="py-1">
+                    <button
+                      onClick={() => signOut()}
+                      className={`block w-full text-left px-4 py-2 text-sm transition-colors ${
+                        isDarkMode 
+                          ? 'text-gray-300 hover:bg-gray-700 hover:text-white' 
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </nav>
 
-      {/* Main Content */}
-      <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <div className="space-y-8">
-          {/* Profile Details Section */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Profile Details</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Job Title
-                </label>
-                <input
-                  type="text"
-                  value={portfolioData.jobTitle}
-                  onChange={(e) => updateProfileData("jobTitle", e.target.value)}
-                  placeholder="e.g., Aspiring Software Engineer"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
-                />
-              </div>
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
+        <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg transition-colors duration-300`}>
+          <div className="p-8">
+            <div className="flex flex-col lg:flex-row gap-8">
+              {/* Left column - Basic Info */}
+              <div className="lg:w-1/3 space-y-6">
+                <h1 className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  Edit Portfolio
+                </h1>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Profile Image URL
-                </label>
-                <input
-                  type="url"
-                  value={portfolioData.profileImage}
-                  onChange={(e) => updateProfileData("profileImage", e.target.value)}
-                  placeholder="https://example.com/profile.jpg"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
-                />
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                About Me
-              </label>
-              <textarea
-                rows={4}
-                value={portfolioData.aboutMe}
-                onChange={(e) => updateProfileData("aboutMe", e.target.value)}
-                placeholder="Tell us about yourself, your background, and your goals..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
-              />
-            </div>
-
-            {/* Social Links */}
-            <div className="mt-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Social Links</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    LinkedIn
-                  </label>
-                  <input
-                    type="url"
-                    value={portfolioData.socialLinks.linkedin || ""}
-                    onChange={(e) => updateSocialLink("linkedin", e.target.value)}
-                    placeholder="https://linkedin.com/in/yourprofile"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    GitHub
-                  </label>
-                  <input
-                    type="url"
-                    value={portfolioData.socialLinks.github || ""}
-                    onChange={(e) => updateSocialLink("github", e.target.value)}
-                    placeholder="https://github.com/yourusername"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Twitter
-                  </label>
-                  <input
-                    type="url"
-                    value={portfolioData.socialLinks.twitter || ""}
-                    onChange={(e) => updateSocialLink("twitter", e.target.value)}
-                    placeholder="https://twitter.com/yourusername"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Website
-                  </label>
-                  <input
-                    type="url"
-                    value={portfolioData.socialLinks.website || ""}
-                    onChange={(e) => updateSocialLink("website", e.target.value)}
-                    placeholder="https://yourwebsite.com"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Portfolio Visibility */}
-            <div className="mt-6">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={portfolioData.isPublic}
-                  onChange={(e) => updateProfileData("isPublic", e.target.checked)}
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                />
-                <span className="ml-2 text-sm text-gray-700">
-                  Make my portfolio public
-                </span>
-              </label>
-            </div>
-          </div>
-
-          {/* Skills Section */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Skills</h2>
-            
-            {/* Add New Skill */}
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                  <input
-                    type="text"
-                    value={newSkill.name}
-                    onChange={(e) => setNewSkill(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Skill name (e.g., JavaScript)"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
-                  />
-                </div>
-                <div>
-                  <select
-                    value={newSkill.category}
-                    onChange={(e) => setNewSkill(prev => ({ ...prev, category: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
-                  >
-                    <option value="Programming Languages">Programming Languages</option>
-                    <option value="Frameworks">Frameworks</option>
-                    <option value="Tools">Tools</option>
-                    <option value="Databases">Databases</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <select
-                    value={newSkill.level}
-                    onChange={(e) => setNewSkill(prev => ({ ...prev, level: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
-                  >
-                    <option value="Beginner">Beginner</option>
-                    <option value="Intermediate">Intermediate</option>
-                    <option value="Advanced">Advanced</option>
-                  </select>
-                </div>
-                <div>
-                  <button
-                    onClick={addSkill}
-                    className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center justify-center"
-                  >
-                    <PlusIcon className="h-4 w-4 mr-2" />
-                    Add Skill
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Skills List */}
-            <div className="space-y-3">
-              {portfolioData.skills.map((skill, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-4">
-                    <span className="font-medium text-gray-900">{skill.name}</span>
-                    <span className="text-sm text-gray-500">{skill.category}</span>
-                    <span className="px-2 py-1 text-xs bg-indigo-100 text-indigo-800 rounded-full">
-                      {skill.level}
-                    </span>
+                {/* Status Messages */}
+                {saveMessage && (
+                  <div className="p-4 bg-green-100 text-green-700 rounded-lg">
+                    {saveMessage}
                   </div>
-                  <button
-                    onClick={() => removeSkill(index)}
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
-              {portfolioData.skills.length === 0 && (
-                <p className="text-gray-500 text-center py-4">No skills added yet. Add your first skill above!</p>
-              )}
-            </div>
-          </div>
-
-          {/* Projects Section */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Projects</h2>
-              <button
-                onClick={addProject}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center"
-              >
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Add Project
-              </button>
-            </div>
-
-            <div className="space-y-6">
-              {portfolioData.projects.map((project, index) => (
-                <div key={index} className="p-4 border border-gray-200 rounded-lg">
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">Project {index + 1}</h3>
-                    <button
-                      onClick={() => removeProject(index)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <TrashIcon className="h-4 w-4" />
-                    </button>
+                )}
+                {error && (
+                  <div className="p-4 bg-red-100 text-red-700 rounded-lg">
+                    {error}
                   </div>
+                )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Project Title
-                      </label>
-                      <input
-                        type="text"
-                        value={project.title}
-                        onChange={(e) => updateProject(index, "title", e.target.value)}
-                        placeholder="My Awesome Project"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Project Image URL
-                      </label>
-                      <input
-                        type="url"
-                        value={project.imageUrl}
-                        onChange={(e) => updateProject(index, "imageUrl", e.target.value)}
-                        placeholder="https://example.com/project-image.jpg"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Live Demo URL
-                      </label>
-                      <input
-                        type="url"
-                        value={project.projectUrl}
-                        onChange={(e) => updateProject(index, "projectUrl", e.target.value)}
-                        placeholder="https://myproject.com"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        GitHub URL
-                      </label>
-                      <input
-                        type="url"
-                        value={project.githubUrl}
-                        onChange={(e) => updateProject(index, "githubUrl", e.target.value)}
-                        placeholder="https://github.com/username/project"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Description
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={project.description}
-                      onChange={(e) => updateProject(index, "description", e.target.value)}
-                      placeholder="Describe your project, the technologies used, and what problems it solves..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
-                    />
-                  </div>
-
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Technologies (comma-separated)
+                {/* Basic Info Form */}
+                <div className="space-y-4">
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                      Job Title
                     </label>
                     <input
                       type="text"
-                      value={project.technologies.join(", ")}
-                      onChange={(e) => updateProject(index, "technologies", e.target.value.split(",").map(tech => tech.trim()).filter(tech => tech))}
-                      placeholder="React, Node.js, MongoDB, Tailwind CSS"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
+                      value={portfolioData.jobTitle}
+                      onChange={(e) => setPortfolioData(prev => ({ ...prev, jobTitle: e.target.value }))}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                        isDarkMode 
+                          ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                          : 'bg-white border-gray-300 text-gray-900'
+                      }`}
+                      placeholder="e.g., Full Stack Developer"
+                    />
+                  </div>
+
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                      Profile Image URL
+                    </label>
+                    <input
+                      type="url"
+                      value={portfolioData.profileImage}
+                      onChange={(e) => setPortfolioData(prev => ({ ...prev, profileImage: e.target.value }))}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                        isDarkMode 
+                          ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                          : 'bg-white border-gray-300 text-gray-900'
+                      }`}
+                      placeholder="https://example.com/image.jpg"
+                    />
+                  </div>
+
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                      About Me
+                    </label>
+                    <textarea
+                      value={portfolioData.aboutMe}
+                      onChange={(e) => setPortfolioData(prev => ({ ...prev, aboutMe: e.target.value }))}
+                      rows={4}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                        isDarkMode 
+                          ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                          : 'bg-white border-gray-300 text-gray-900'
+                      }`}
+                      placeholder="Tell visitors about yourself..."
+                    />
+                  </div>
+
+                  <div className="flex items-center">
+                    <input
+                      id="isPublic"
+                      type="checkbox"
+                      checked={portfolioData.isPublic}
+                      onChange={(e) => setPortfolioData(prev => ({ ...prev, isPublic: e.target.checked }))}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="isPublic" className={`ml-2 block text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                      Make portfolio public
+                    </label>
+                  </div>
+                </div>
+
+                {/* Social Links */}
+                <div className="space-y-4">
+                  <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    Social Links
+                  </h3>
+                  
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                      LinkedIn
+                    </label>
+                    <input
+                      type="url"
+                      value={portfolioData.socialLinks.linkedin || ""}
+                      onChange={(e) => setPortfolioData(prev => ({
+                        ...prev,
+                        socialLinks: { ...prev.socialLinks, linkedin: e.target.value }
+                      }))}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                        isDarkMode 
+                          ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                          : 'bg-white border-gray-300 text-gray-900'
+                      }`}
+                      placeholder="https://linkedin.com/in/username"
+                    />
+                  </div>
+
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                      GitHub
+                    </label>
+                    <input
+                      type="url"
+                      value={portfolioData.socialLinks.github || ""}
+                      onChange={(e) => setPortfolioData(prev => ({
+                        ...prev,
+                        socialLinks: { ...prev.socialLinks, github: e.target.value }
+                      }))}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                        isDarkMode 
+                          ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                          : 'bg-white border-gray-300 text-gray-900'
+                      }`}
+                      placeholder="https://github.com/username"
+                    />
+                  </div>
+
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                      Twitter
+                    </label>
+                    <input
+                      type="url"
+                      value={portfolioData.socialLinks.twitter || ""}
+                      onChange={(e) => setPortfolioData(prev => ({
+                        ...prev,
+                        socialLinks: { ...prev.socialLinks, twitter: e.target.value }
+                      }))}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                        isDarkMode 
+                          ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                          : 'bg-white border-gray-300 text-gray-900'
+                      }`}
+                      placeholder="https://twitter.com/username"
+                    />
+                  </div>
+
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                      Website
+                    </label>
+                    <input
+                      type="url"
+                      value={portfolioData.socialLinks.website || ""}
+                      onChange={(e) => setPortfolioData(prev => ({
+                        ...prev,
+                        socialLinks: { ...prev.socialLinks, website: e.target.value }
+                      }))}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                        isDarkMode 
+                          ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                          : 'bg-white border-gray-300 text-gray-900'
+                      }`}
+                      placeholder="https://yourwebsite.com"
                     />
                   </div>
                 </div>
-              ))}
+              </div>
 
-              {portfolioData.projects.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <p className="mb-4">No projects added yet.</p>
-                  <button
-                    onClick={addProject}
-                    className="bg-indigo-600 text-white px-6 py-3 rounded-md hover:bg-indigo-700"
-                  >
-                    Add Your First Project
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Save Button */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex flex-col items-center space-y-4">
-              {error && (
-                <div className="text-red-600 text-sm text-center">{error}</div>
-              )}
-              
-              {saveMessage && (
-                <div className="text-green-600 text-sm text-center">{saveMessage}</div>
-              )}
-
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="flex-1 sm:flex-none bg-indigo-600 text-white px-8 py-3 rounded-md hover:bg-indigo-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSaving ? "Saving Changes..." : "Save Changes"}
-                </button>
-
-                <Link
-                  href="/dashboard/templates"
-                  className="flex-1 sm:flex-none bg-purple-600 text-white px-8 py-3 rounded-md hover:bg-purple-700 font-medium inline-flex items-center justify-center gap-2 transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a4 4 0 004-4V5z" />
-                  </svg>
-                  Design in Visual Editor
-                </Link>
-
-                {portfolioSlug && portfolioData.isPublic && (
-                  <button
-                    onClick={handleViewPortfolio}
-                    className="flex-1 sm:flex-none bg-green-600 text-white px-8 py-3 rounded-md hover:bg-green-700 font-medium inline-flex items-center justify-center gap-2"
-                  >
-                    <EyeIcon className="w-5 h-5" />
-                    View Portfolio
-                  </button>
-                )}
-
-                {portfolioSlug && !portfolioData.isPublic && (
-                  <div className="text-gray-500 text-sm text-center">
-                    Set portfolio to public to view it live
+              {/* Right column - Projects and Skills */}
+              <div className="lg:w-2/3 space-y-8">
+                {/* Projects Section */}
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      Projects
+                    </h2>
+                    <button
+                      onClick={addProject}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <PlusIcon className="w-4 h-4" />
+                      Add Project
+                    </button>
                   </div>
-                )}
+
+                  {portfolioData.projects.map((project, index) => (
+                    <div key={index} className={`p-6 border rounded-lg space-y-4 ${
+                      isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-300 bg-gray-50'
+                    }`}>
+                      <div className="flex justify-between items-start">
+                        <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                          Project {index + 1}
+                        </h3>
+                        <button
+                          onClick={() => removeProject(index)}
+                          className="text-red-500 hover:text-red-700 transition-colors"
+                        >
+                          <TrashIcon className="w-5 h-5" />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                            Project Title
+                          </label>
+                          <input
+                            type="text"
+                            value={project.title}
+                            onChange={(e) => updateProject(index, 'title', e.target.value)}
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                              isDarkMode 
+                                ? 'bg-gray-600 border-gray-500 text-white placeholder-gray-400' 
+                                : 'bg-white border-gray-300 text-gray-900'
+                            }`}
+                            placeholder="My Awesome Project"
+                          />
+                        </div>
+
+                        <div>
+                          <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                            Project URL
+                          </label>
+                          <input
+                            type="url"
+                            value={project.projectUrl}
+                            onChange={(e) => updateProject(index, 'projectUrl', e.target.value)}
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                              isDarkMode 
+                                ? 'bg-gray-600 border-gray-500 text-white placeholder-gray-400' 
+                                : 'bg-white border-gray-300 text-gray-900'
+                            }`}
+                            placeholder="https://myproject.com"
+                          />
+                        </div>
+
+                        <div>
+                          <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                            GitHub URL
+                          </label>
+                          <input
+                            type="url"
+                            value={project.githubUrl}
+                            onChange={(e) => updateProject(index, 'githubUrl', e.target.value)}
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                              isDarkMode 
+                                ? 'bg-gray-600 border-gray-500 text-white placeholder-gray-400' 
+                                : 'bg-white border-gray-300 text-gray-900'
+                            }`}
+                            placeholder="https://github.com/user/repo"
+                          />
+                        </div>
+
+                        <div>
+                          <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                            Image URL
+                          </label>
+                          <input
+                            type="url"
+                            value={project.imageUrl}
+                            onChange={(e) => updateProject(index, 'imageUrl', e.target.value)}
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                              isDarkMode 
+                                ? 'bg-gray-600 border-gray-500 text-white placeholder-gray-400' 
+                                : 'bg-white border-gray-300 text-gray-900'
+                            }`}
+                            placeholder="https://example.com/image.jpg"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                          Description
+                        </label>
+                        <textarea
+                          value={project.description}
+                          onChange={(e) => updateProject(index, 'description', e.target.value)}
+                          rows={3}
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                            isDarkMode 
+                              ? 'bg-gray-600 border-gray-500 text-white placeholder-gray-400' 
+                              : 'bg-white border-gray-300 text-gray-900'
+                          }`}
+                          placeholder="Describe your project..."
+                        />
+                      </div>
+
+                      <div>
+                        <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                          Technologies (comma-separated)
+                        </label>
+                        <input
+                          type="text"
+                          value={project.technologies.join(', ')}
+                          onChange={(e) => updateProject(index, 'technologies', e.target.value.split(',').map(tech => tech.trim()))}
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                            isDarkMode 
+                              ? 'bg-gray-600 border-gray-500 text-white placeholder-gray-400' 
+                              : 'bg-white border-gray-300 text-gray-900'
+                          }`}
+                          placeholder="React, TypeScript, Node.js"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Skills Section */}
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      Skills
+                    </h2>
+                    <button
+                      onClick={addSkill}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <PlusIcon className="w-4 h-4" />
+                      Add Skill
+                    </button>
+                  </div>
+
+                  {portfolioData.skills.map((skill, index) => (
+                    <div key={index} className={`p-4 border rounded-lg ${
+                      isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-300 bg-gray-50'
+                    }`}>
+                      <div className="flex justify-between items-start mb-4">
+                        <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                          Skill {index + 1}
+                        </h3>
+                        <button
+                          onClick={() => removeSkill(index)}
+                          className="text-red-500 hover:text-red-700 transition-colors"
+                        >
+                          <TrashIcon className="w-5 h-5" />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                            Skill Name
+                          </label>
+                          <input
+                            type="text"
+                            value={skill.name}
+                            onChange={(e) => updateSkill(index, 'name', e.target.value)}
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                              isDarkMode 
+                                ? 'bg-gray-600 border-gray-500 text-white placeholder-gray-400' 
+                                : 'bg-white border-gray-300 text-gray-900'
+                            }`}
+                            placeholder="JavaScript"
+                          />
+                        </div>
+
+                        <div>
+                          <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                            Category
+                          </label>
+                          <input
+                            type="text"
+                            value={skill.category}
+                            onChange={(e) => updateSkill(index, 'category', e.target.value)}
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                              isDarkMode 
+                                ? 'bg-gray-600 border-gray-500 text-white placeholder-gray-400' 
+                                : 'bg-white border-gray-300 text-gray-900'
+                            }`}
+                            placeholder="Programming Language"
+                          />
+                        </div>
+
+                        <div>
+                          <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                            Level
+                          </label>
+                          <select
+                            value={skill.level}
+                            onChange={(e) => updateSkill(index, 'level', e.target.value)}
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                              isDarkMode 
+                                ? 'bg-gray-600 border-gray-500 text-white' 
+                                : 'bg-white border-gray-300 text-gray-900'
+                            }`}
+                          >
+                            <option value="Beginner">Beginner</option>
+                            <option value="Intermediate">Intermediate</option>
+                            <option value="Advanced">Advanced</option>
+                            <option value="Expert">Expert</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Save Button and Actions */}
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-400 flex items-center justify-center gap-2"
+                  >
+                    {isSaving ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Saving...
+                      </>
+                    ) : (
+                      'Save Changes'
+                    )}
+                  </button>
+
+                  {portfolioSlug && portfolioData.isPublic && (
+                    <a
+                      href={`/${portfolioSlug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                      View Portfolio
+                    </a>
+                  )}
+
+                  {portfolioSlug && !portfolioData.isPublic && (
+                    <div className="text-gray-500 text-sm text-center">
+                      Set portfolio to public to view it live
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

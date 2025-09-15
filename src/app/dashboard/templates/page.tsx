@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { ArrowLeftIcon, CheckIcon } from "@heroicons/react/24/outline"
+import { ArrowLeftIcon, CheckIcon, SunIcon, MoonIcon } from "@heroicons/react/24/outline"
 
 interface Template {
   id: string
@@ -25,6 +25,7 @@ export default function TemplatesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState("")
+  const [isDarkMode, setIsDarkMode] = useState(true)
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -88,6 +89,10 @@ export default function TemplatesPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode)
   }
 
   const templates: Template[] = [
@@ -192,10 +197,10 @@ export default function TemplatesPage() {
 
   if (status === "loading" || isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className={`min-h-screen flex items-center justify-center ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-lg text-gray-600">Loading templates...</p>
+          <div className={`animate-spin rounded-full h-32 w-32 border-b-2 ${isDarkMode ? 'border-blue-400' : 'border-indigo-600'} mx-auto`}></div>
+          <p className={`mt-4 text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Loading templates...</p>
         </div>
       </div>
     )
@@ -206,24 +211,84 @@ export default function TemplatesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center">
-            <Link
-              href="/dashboard"
-              className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      {/* Fixed Header/Navbar */}
+      <div className={`fixed top-0 left-0 right-0 z-50 ${isDarkMode ? 'bg-gray-900/80' : 'bg-white/80'} backdrop-blur-md border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Left side - Logo and Navigation */}
+            <div className="flex items-center space-x-4">
+              <Link href="/dashboard" className={`text-2xl font-bold font-orbitron ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                Port4lio
+              </Link>
+              
+              {/* Vertical Separator */}
+              <div className={`h-6 w-px ${isDarkMode ? 'bg-gray-600' : 'bg-gray-300'}`}></div>
+              
+              {/* User Name */}
+              <span className={`text-lg font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                {session?.user?.name || 'User'}
+              </span>
+              
+              {/* Navigation Links */}
+              <nav className="hidden md:flex items-center space-x-6 ml-8">
+                <Link 
+                  href="/dashboard" 
+                  className={`${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'} transition-colors`}
+                >
+                  Dashboard
+                </Link>
+                <span className={`font-medium ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                  Templates
+                </span>
+                <Link 
+                  href="/dashboard/edit" 
+                  className={`${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'} transition-colors`}
+                >
+                  Edit My Portfolio
+                </Link>
+                <Link 
+                  href="/dashboard/analytics" 
+                  className={`${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'} transition-colors`}
+                >
+                  Analytics
+                </Link>
+                <Link 
+                  href="/dashboard/settings" 
+                  className={`${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'} transition-colors`}
+                >
+                  Settings
+                </Link>
+              </nav>
+            </div>
+
+            {/* Right side - Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className={`p-2 rounded-lg transition-colors ${
+                isDarkMode 
+                  ? 'bg-gray-800 hover:bg-gray-700 text-yellow-400' 
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+              }`}
+              aria-label="Toggle theme"
             >
-              <ArrowLeftIcon className="h-5 w-5 mr-2" />
-              Back to Dashboard
-            </Link>
+              {isDarkMode ? (
+                <SunIcon className="h-5 w-5" />
+              ) : (
+                <MoonIcon className="h-5 w-5" />
+              )}
+            </button>
           </div>
         </div>
+      </div>
+
+      {/* Main Content with top padding for fixed header */}
+      <div className="pt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Choose Your Template</h1>
-          <p className="text-lg text-gray-600">
+          <h1 className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4`}>Choose Your Template</h1>
+          <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
             Select a template that best represents your professional style and target audience
           </p>
           {saveMessage && (
@@ -240,8 +305,8 @@ export default function TemplatesPage() {
         <div className="space-y-12">
           {/* Category: UI/UX Design */}
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">UI/UX Design</h2>
-            <p className="text-gray-600 mb-6">Templates crafted for designers and creative professionals</p>
+            <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>UI/UX Design</h2>
+            <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-6`}>Templates crafted for designers and creative professionals</p>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {templates.filter(template => template.category === 'design').map((template) => {
                 const isSelected = selectedTemplate === template.id
@@ -304,8 +369,8 @@ export default function TemplatesPage() {
 
           {/* Category: Backend Development */}
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Backend Development</h2>
-            <p className="text-gray-600 mb-6">Professional templates for backend engineers and system architects</p>
+            <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>Backend Development</h2>
+            <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-6`}>Professional templates for backend engineers and system architects</p>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {templates.filter(template => template.category === 'backend').map((template) => {
                 const isSelected = selectedTemplate === template.id
@@ -368,8 +433,8 @@ export default function TemplatesPage() {
 
           {/* Category: Full-Stack Development */}
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Full-Stack Development</h2>
-            <p className="text-gray-600 mb-6">Versatile templates for full-stack developers and tech leaders</p>
+            <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>Full-Stack Development</h2>
+            <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-6`}>Versatile templates for full-stack developers and tech leaders</p>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {templates.filter(template => template.category === 'fullstack').map((template) => {
                 const isSelected = selectedTemplate === template.id
@@ -432,8 +497,8 @@ export default function TemplatesPage() {
 
           {/* Category: Data Science */}
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Data Science</h2>
-            <p className="text-gray-600 mb-6">Specialized templates for data scientists and researchers</p>
+            <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>Data Science</h2>
+            <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-6`}>Specialized templates for data scientists and researchers</p>
             <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
               {templates.filter(template => template.category === 'datascience').map((template) => {
                 const isSelected = selectedTemplate === template.id
@@ -442,8 +507,8 @@ export default function TemplatesPage() {
                 return (
                   <div
                     key={template.id}
-                    className={`bg-white rounded-lg shadow-lg overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-xl ${
-                      isSelected ? "ring-4 ring-indigo-500 ring-opacity-50" : ""
+                    className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-xl ${
+                      isSelected ? "ring-4 ring-blue-500 ring-opacity-50" : ""
                     } max-w-md mx-auto`}
                     onClick={() => !isSaving && handleTemplateSelect(template.id)}
                   >
@@ -496,12 +561,12 @@ export default function TemplatesPage() {
         </div>
 
         {/* Info Section */}
-        <div className="mt-12 bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Template Information</h2>
+        <div className={`mt-12 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow p-6`}>
+          <h2 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4`}>Template Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h3 className="font-medium text-gray-900 mb-2">How Templates Work</h3>
-              <ul className="text-sm text-gray-600 space-y-1">
+              <h3 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>How Templates Work</h3>
+              <ul className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} space-y-1`}>
                 <li>• Templates change the visual theme of your portfolio</li>
                 <li>• Your content remains the same across all templates</li>
                 <li>• Changes apply instantly to your live portfolio</li>
@@ -509,8 +574,8 @@ export default function TemplatesPage() {
               </ul>
             </div>
             <div>
-              <h3 className="font-medium text-gray-900 mb-2">Choose by Profession</h3>
-              <ul className="text-sm text-gray-600 space-y-1">
+              <h3 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>Choose by Profession</h3>
+              <ul className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} space-y-1`}>
                 <li>• <strong>Design:</strong> Creative, visual-focused templates</li>
                 <li>• <strong>Backend:</strong> Technical, code-oriented themes</li>
                 <li>• <strong>Full-Stack:</strong> Balanced, versatile designs</li>
@@ -518,6 +583,7 @@ export default function TemplatesPage() {
               </ul>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>

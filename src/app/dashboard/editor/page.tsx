@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { Suspense } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState, useMemo } from "react"
@@ -214,7 +214,7 @@ function WidgetComponent({ template, data, type, projectIndex }: WidgetComponent
   return <div className={`${styles.container} rounded-lg p-4 h-full`}>Unknown widget type</div>
 }
 
-export default function VisualEditorPage() {
+function VisualEditorPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -551,5 +551,17 @@ export default function VisualEditorPage() {
         }
       `}</style>
     </div>
+  )
+}
+
+export default function VisualEditorPageWrapper() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+      </div>
+    }>
+      <VisualEditorPage />
+    </Suspense>
   )
 }

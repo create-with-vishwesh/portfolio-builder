@@ -1,0 +1,13 @@
+                {portfolioSlug && !portfolioData.isPublic && (
+                  <div className="text-gray-500 text-sm text-center">
+                    Set portfolio to public to view it live
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

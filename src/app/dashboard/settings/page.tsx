@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useSession, signOut } from "next-auth/react"
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import { ExclamationTriangleIcon, CheckCircleIcon, XCircleIcon, ChevronLeftIcon } from "@heroicons/react/24/outline"
+import { ExclamationTriangleIcon, CheckCircleIcon, XCircleIcon, ChevronLeftIcon, SunIcon, MoonIcon } from "@heroicons/react/24/outline"
 
 // Confirmation Modal Component
 function ConfirmationModal({ 
@@ -96,6 +96,7 @@ export default function AccountSettingsPage() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [alert, setAlert] = useState<{ type: 'success' | 'error', message: string } | null>(null)
+  const [isDarkMode, setIsDarkMode] = useState(true)
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -170,6 +171,10 @@ export default function AccountSettingsPage() {
     }
   }
 
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode)
+  }
+
   const handleAccountDeletion = async () => {
     setIsDeleting(true)
     setAlert(null)
@@ -210,25 +215,79 @@ export default function AccountSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header with Back Navigation */}
-        <div className="mb-8 flex items-center space-x-4">
-          <Link
-            href="/dashboard"
-            className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            <ChevronLeftIcon className="w-5 h-5 mr-2" />
-            Back to Dashboard
-          </Link>
-          
-          <div className="h-6 w-px bg-gray-300"></div>
-          
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Account Settings</h1>
-            <p className="text-gray-600 mt-2">Manage your account preferences and data</p>
+    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      {/* Fixed Header/Navbar */}
+      <div className={`fixed top-0 left-0 right-0 z-50 ${isDarkMode ? 'bg-gray-900/80' : 'bg-white/80'} backdrop-blur-md border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Left side - Logo and Navigation */}
+            <div className="flex items-center space-x-4">
+              <Link href="/dashboard" className={`text-2xl font-bold font-orbitron ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                Port4lio
+              </Link>
+              
+              {/* Vertical Separator */}
+              <div className={`h-6 w-px ${isDarkMode ? 'bg-gray-600' : 'bg-gray-300'}`}></div>
+              
+              {/* User Name */}
+              <span className={`text-lg font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                {session?.user?.name || 'User'}
+              </span>
+              
+              {/* Navigation Links */}
+              <nav className="hidden md:flex items-center space-x-6 ml-8">
+                <Link 
+                  href="/dashboard" 
+                  className={`${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'} transition-colors`}
+                >
+                  Dashboard
+                </Link>
+                <Link 
+                  href="/dashboard/templates" 
+                  className={`${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'} transition-colors`}
+                >
+                  Templates
+                </Link>
+                <Link 
+                  href="/dashboard/analytics" 
+                  className={`${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'} transition-colors`}
+                >
+                  Analytics
+                </Link>
+                <span className={`font-medium ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                  Settings
+                </span>
+              </nav>
+            </div>
+
+            {/* Right side - Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className={`p-2 rounded-lg transition-colors ${
+                isDarkMode 
+                  ? 'bg-gray-800 hover:bg-gray-700 text-yellow-400' 
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+              }`}
+              aria-label="Toggle theme"
+            >
+              {isDarkMode ? (
+                <SunIcon className="h-5 w-5" />
+              ) : (
+                <MoonIcon className="h-5 w-5" />
+              )}
+            </button>
           </div>
         </div>
+      </div>
+
+      {/* Main Content with top padding for fixed header */}
+      <div className="pt-16">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          
+          <div className="mb-8">
+            <h1 className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Account Settings</h1>
+            <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mt-2`}>Manage your account preferences and data</p>
+          </div>
 
       {alert && (
         <Alert 
@@ -240,15 +299,15 @@ export default function AccountSettingsPage() {
 
       <div className="space-y-8">
         {/* Profile Settings Card */}
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">Profile Settings</h2>
+        <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border rounded-xl shadow-sm`}>
+          <div className={`px-6 py-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+            <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Profile Settings</h2>
           </div>
           
           <div className="px-6 py-6">
             <div className="space-y-4">
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-900 mb-2">
+                <label htmlFor="username" className={`block text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
                   Public Username
                 </label>
                 <div className="flex gap-3">
@@ -257,22 +316,22 @@ export default function AccountSettingsPage() {
                     id="username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
+                    className={`flex-1 px-4 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white focus:ring-blue-500 focus:border-blue-500' : 'border-gray-300 bg-white text-gray-900 focus:ring-indigo-500 focus:border-indigo-500'} rounded-lg focus:ring-2`}
                     placeholder="Enter your username"
                   />
                   <button
                     onClick={handleUsernameUpdate}
                     disabled={isLoading}
-                    className="px-6 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={`px-6 py-2 ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500' : 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500'} text-white font-medium rounded-lg focus:ring-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     {isLoading ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
-                <p className="text-sm text-gray-500 mt-2">
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-2`}>
                   This will change your public portfolio URL.
                   {username && (
                     <span className="block mt-1">
-                      Current URL: <span className="font-mono text-indigo-600">
+                      Current URL: <span className={`font-mono ${isDarkMode ? 'text-blue-400' : 'text-indigo-600'}`}>
                         {typeof window !== 'undefined' ? window.location.origin : ''}/{username}
                       </span>
                     </span>
@@ -284,9 +343,9 @@ export default function AccountSettingsPage() {
         </div>
 
         {/* Danger Zone Card */}
-        <div className="bg-white border-2 border-red-200 rounded-xl shadow-sm">
-          <div className="px-6 py-4 border-b border-red-200 bg-red-50">
-            <h2 className="text-xl font-semibold text-red-900">Danger Zone</h2>
+        <div className={`${isDarkMode ? 'bg-gray-800 border-red-800' : 'bg-white border-red-200'} border-2 rounded-xl shadow-sm`}>
+          <div className={`px-6 py-4 border-b ${isDarkMode ? 'border-red-800 bg-red-900/20' : 'border-red-200 bg-red-50'}`}>
+            <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-red-300' : 'text-red-900'}`}>Danger Zone</h2>
           </div>
           
           <div className="px-6 py-6">
@@ -299,7 +358,7 @@ export default function AccountSettingsPage() {
                 >
                   {isDeleting ? 'Deleting...' : 'Delete My Account'}
                 </button>
-                <p className="text-sm text-gray-600 mt-3">
+                <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mt-3`}>
                   This will permanently delete your account and all of your portfolio data. 
                   This action is irreversible.
                 </p>
@@ -307,7 +366,7 @@ export default function AccountSettingsPage() {
             </div>
           </div>
         </div>
-      </div>
+        </div>
 
       {/* Confirmation Modal */}
       <ConfirmationModal
@@ -319,6 +378,7 @@ export default function AccountSettingsPage() {
         confirmText="Yes, Delete My Account"
         isDestructive={true}
       />
+        </div>
       </div>
     </div>
   )
