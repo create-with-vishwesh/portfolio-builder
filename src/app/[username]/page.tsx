@@ -3,6 +3,10 @@ import { PrismaClient } from "@prisma/client"
 import OnyxTemplate from "@/components/templates/OnyxTemplate"
 import QuartzTemplate from "@/components/templates/QuartzTemplate"
 import SapphireTemplate from "@/components/templates/SapphireTemplate"
+import CreativeTemplate from "@/components/templates/CreativeTemplate"
+import TerminalTemplate from "@/components/templates/TerminalTemplate"
+import ModernTemplate from "@/components/templates/ModernTemplate"
+import DataTemplate from "@/components/templates/DataTemplate"
 import CustomLayoutPortfolio from "../../components/CustomLayoutPortfolio"
 
 const prisma = new PrismaClient()
@@ -111,6 +115,14 @@ export default async function PortfolioPage({
 
   // Render the appropriate template based on user's choice
   switch (template) {
+    case "creative":
+      return <CreativeTemplate {...templateProps} />
+    case "terminal":
+      return <TerminalTemplate {...templateProps} />
+    case "modern":
+      return <ModernTemplate {...templateProps} />
+    case "data":
+      return <DataTemplate {...templateProps} />
     case "quartz":
       return <QuartzTemplate {...templateProps} />
     case "sapphire":

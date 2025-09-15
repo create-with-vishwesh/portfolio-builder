@@ -41,6 +41,13 @@ export default function RootLayout({
         <Providers>
           {children}
         </Providers>
+        
+        {/* Omnidimension Chatbot Integration */}
+        <script 
+          id="omnidimension-web-widget" 
+          async 
+          src="https://backend.omnidim.io/web_widget.js?secret_key=19682f7376caf81ec125a45a05cb92f5"
+        />
       </body>
     </html>
   );

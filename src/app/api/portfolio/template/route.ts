@@ -6,7 +6,16 @@ import { PrismaClient } from "@prisma/client"
 const prisma = new PrismaClient()
 
 // Valid template options
-const VALID_TEMPLATES = ["onyx", "quartz", "sapphire"]
+const VALID_TEMPLATES = [
+  "onyx", 
+  "quartz", 
+  "sapphire", 
+  "creative", 
+  "terminal", 
+  "modern", 
+  "data", 
+  "flux"
+]
 
 // POST - Update user's portfolio template
 export async function POST(request: NextRequest) {

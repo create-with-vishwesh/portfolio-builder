@@ -93,6 +93,16 @@ export default function TemplatesPage() {
   const templates: Template[] = [
     // UI/UX Design Templates
     {
+      id: "flux",
+      name: "Flux",
+      description: "A cutting-edge design with animated elements and modern UI patterns for contemporary designers",
+      preview: "Modern • Sleek • Interactive",
+      color: "from-slate-900 via-purple-900 to-slate-900",
+      features: ["Modern animations", "Interactive elements", "Contemporary design patterns"],
+      category: "design",
+      targetAudience: "UI/UX Designers, Product Designers, Design Leaders"
+    },
+    {
       id: "creative",
       name: "Creative",
       description: "A vibrant gradient theme perfect for UI/UX designers and creative professionals",
@@ -222,7 +232,7 @@ export default function TemplatesPage() {
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">UI/UX Design</h2>
             <p className="text-gray-600 mb-6">Templates crafted for designers and creative professionals</p>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {templates.filter(template => template.category === 'design').map((template) => {
                 const isSelected = selectedTemplate === template.id
                 const isCurrent = currentTemplate === template.id
